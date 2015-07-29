@@ -32,7 +32,7 @@ class ArrayValueConverterMap
         }
 
         foreach ($input as $key => $item) {
-            $input[$key] = $this->convertItem($item);
+            $input[$key] = $this->convertItem($item, $key);
         }
 
         return $input;
@@ -45,16 +45,14 @@ class ArrayValueConverterMap
      *
      * @return mixed
      */
-    protected function convertItem($item)
+    protected function convertItem($item, $key)
     {
-        foreach ($item as $key => $value) {
-            if (!isset($this->converters[$key])) {
-                continue;
-            }
+        if (!isset($this->converters[$key])) {
+            return $item;
+        }
 
-            foreach ($this->converters[$key] as $converter) {
-                $item[$key] = call_user_func($converter, $item[$key]);
-            }
+        foreach ($this->converters[$key] as $converter) {
+            $item = call_user_func($converter, $item);
         }
 
         return $item;
