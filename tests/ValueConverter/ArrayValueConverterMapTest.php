@@ -50,4 +50,26 @@ class ArrayValueConverterMapTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('bartest2', $data[1]['foo']);
         $this->assertEquals('barbaztest2', $data[1]['bar']);
     }
+    public function testConvertWithOneLevelMultipleFields()
+    {
+        $data = array(
+            'foo' => 'test',
+            'bar' => 'test'
+        );
+
+        $addBarConverter = function($input) { return 'bar'.$input; };
+        $addBazConverter = function($input) { return 'baz'.$input; };
+
+        $converter = new ArrayValueConverterMap(
+            array(
+                'foo' => array($addBarConverter),
+                'bar' => array($addBazConverter, $addBarConverter),
+            )
+        );
+
+        $data = call_user_func($converter, $data);
+
+        $this->assertEquals('bartest', $data['foo']);
+        $this->assertEquals('barbaztest', $data['bar']);
+    }
 }
