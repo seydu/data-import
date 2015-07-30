@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
+use Ddeboer\DataImport\Reporter\MessageCollector;
 
 /**
  * A mediator between a reader and one or more writers and converters
@@ -101,6 +102,11 @@ class StepAggregator implements Workflow, LoggerAwareInterface
 
         return $this;
     }
+    
+    protected function createMessageCollector($item)
+    {
+        return new MessageCollector($item);
+    }
 
     /**
      * {@inheritdoc}
@@ -109,6 +115,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
     {
         $count      = 0;
         $exceptions = new \SplObjectStorage();
+        $reports    = new \SplObjectStorage();
         $startTime  = new \DateTime;
 
         foreach ($this->writers as $writer) {
@@ -122,7 +129,8 @@ class StepAggregator implements Workflow, LoggerAwareInterface
 
         // Read all items
         foreach ($this->reader as $index => $item) {
-
+            $collector = $this->createMessageCollector($item);
+            $reports->attach($collector, $index);
             if (is_callable('pcntl_signal_dispatch')) {
                 pcntl_signal_dispatch();
             }
@@ -133,7 +141,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
 
             try {
                 foreach (clone $this->steps as $step) {
-                    if (false === $step->process($item)) {
+                    if (false === $step->process($item, $collector)) {
                         continue 2;
                     }
                 }
@@ -161,7 +169,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
             $writer->finish();
         }
 
-        return new Result($this->name, $startTime, new \DateTime, $count, $exceptions);
+        return new Result($this->name, $startTime, new \DateTime, $count, $exceptions, $reports);
     }
 
     /**

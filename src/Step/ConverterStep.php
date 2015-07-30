@@ -3,7 +3,8 @@
 namespace Ddeboer\DataImport\Step;
 
 use Ddeboer\DataImport\Step;
-use Ddeboer\DataImport\Exception\UnexpectedTypeException;
+use Ddeboer\DataImport\Reporter\ReporterInterface;
+use Ddeboer\DataImport\Reporter\MessageCollectorInterface;
 
 /**
  * @author Markus Bachmann <markus.bachmann@bachi.biz>
@@ -40,9 +41,12 @@ class ConverterStep implements Step
     /**
      * {@inheritdoc}
      */
-    public function process(&$item)
+    public function process(&$item, MessageCollectorInterface $collector = null)
     {
         foreach ($this->converters as $converter) {
+            if($collector and $converter instanceof ReporterInterface) {
+                $converter->setMessageCollector($collector);
+            }
             $item = call_user_func($converter, $item);
         }
 
