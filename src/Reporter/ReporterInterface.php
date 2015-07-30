@@ -19,5 +19,5 @@ interface ReporterInterface
      * 
      * @return MessageCollectorInterface $collector
      */
-    public function getMessageCollector(MessageCollectorInterface $collector);
+    public function getMessageCollector();
 }
