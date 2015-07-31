@@ -57,4 +57,13 @@ class ArrayValueConverterMap
 
         return $item;
     }
+    
+    /**
+     * 
+     * @return 
+     */
+    public function getConverters()
+    {
+        return $this->converters;
+    }
 }
