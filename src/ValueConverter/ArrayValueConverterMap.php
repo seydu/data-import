@@ -27,12 +27,14 @@ class ArrayValueConverterMap
      */
     public function __invoke($input)
     {
-        if (!is_array($input)) {
-            throw new \InvalidArgumentException('Input of a ArrayValueConverterMap must be an array');
+        if (!is_array($input) and !$input instanceof \Traversable) {
+            throw new \InvalidArgumentException(
+                'Input of a ArrayValueConverterMap must be an array or \\Traversable'
+            );
         }
 
         foreach ($input as $key => $item) {
-            $input[$key] = $this->convertItem($item);
+            $input[$key] = $this->convertItem($item, $key);
         }
 
         return $input;
@@ -45,18 +47,25 @@ class ArrayValueConverterMap
      *
      * @return mixed
      */
-    protected function convertItem($item)
+    protected function convertItem($item, $key)
     {
-        foreach ($item as $key => $value) {
-            if (!isset($this->converters[$key])) {
-                continue;
-            }
+        if (!isset($this->converters[$key])) {
+            return $item;
+        }
 
-            foreach ($this->converters[$key] as $converter) {
-                $item[$key] = call_user_func($converter, $item[$key]);
-            }
+        foreach ($this->converters[$key] as $converter) {
+            $item = call_user_func($converter, $item);
         }
 
         return $item;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public function getConverters()
+    {
+        return $this->converters;
     }
 }
