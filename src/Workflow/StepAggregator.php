@@ -49,7 +49,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
     /**
      * @var Writer[]
      */
-    private $writers = [];
+    protected $writers = [];
 
     /**
      * @var boolean
@@ -103,13 +103,47 @@ class StepAggregator implements Workflow, LoggerAwareInterface
     }
 
     /**
+     * 
+     * @param string $name
+     * @param \DateTime $startTime
+     * @param \DateTime $endTime
+     * @param integer $count
+     * @param \SplObjectStorage $exceptions
+     * @param array $items
+     * @return Result
+     */
+    protected function createResult($name, $startTime, $endTime, $count, $exceptions, $items)
+    {
+        return new Result($name, $startTime, $endTime, $count, $exceptions);
+    }
+    
+    protected function writeItem($item)
+    {
+        foreach ($this->writers as $writer) {
+            $writer->writeItem($item);
+        }
+    }
+
+    /**
+     * 
+     * @param Result $result
+     */
+    protected function finish(Result $result)
+    {
+        foreach ($this->writers as $writer) {
+            $writer->finish();
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function process()
     {
-        $count      = 0;
-        $exceptions = new \SplObjectStorage();
-        $startTime  = new \DateTime;
+        $count          = 0;
+        $exceptions     = new \SplObjectStorage();
+        $processedItems = array();
+        $startTime      = new \DateTime;
 
         foreach ($this->writers as $writer) {
             $writer->prepare();
@@ -122,6 +156,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
 
         // Read all items
         foreach ($this->reader as $index => $item) {
+            $processedItems[$index] = $item;
 
             if (is_callable('pcntl_signal_dispatch')) {
                 pcntl_signal_dispatch();
@@ -133,6 +168,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
 
             try {
                 foreach (clone $this->steps as $step) {
+                    pyk_echo(get_class($step));
                     if (false === $step->process($item)) {
                         continue 2;
                     }
@@ -142,9 +178,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
                     throw new UnexpectedTypeException($item, 'array');
                 }
 
-                foreach ($this->writers as $writer) {
-                    $writer->writeItem($item);
-                }
+                $this->writeItem($item);
             } catch(Exception $e) {
                 if (!$this->skipItemOnFailure) {
                     throw $e;
@@ -157,11 +191,17 @@ class StepAggregator implements Workflow, LoggerAwareInterface
             $count++;
         }
 
-        foreach ($this->writers as $writer) {
-            $writer->finish();
-        }
+        $result = $this->createResult(
+            $this->name, 
+            $startTime, 
+            new \DateTime, 
+            $count, 
+            $exceptions, 
+            $processedItems
+        );
 
-        return new Result($this->name, $startTime, new \DateTime, $count, $exceptions);
+        $this->finish($result);
+        return $result;
     }
 
     /**
