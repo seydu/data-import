@@ -49,7 +49,7 @@ class StepAggregator implements Workflow, LoggerAwareInterface
     /**
      * @var Writer[]
      */
-    protected $writers = [];
+    private $writers = [];
 
     /**
      * @var boolean
@@ -168,7 +168,6 @@ class StepAggregator implements Workflow, LoggerAwareInterface
 
             try {
                 foreach (clone $this->steps as $step) {
-                    pyk_echo(get_class($step));
                     if (false === $step->process($item)) {
                         continue 2;
                     }
@@ -232,5 +231,14 @@ class StepAggregator implements Workflow, LoggerAwareInterface
     public function getName()
     {
         return $this->name;
+    }
+    
+    /**
+     * 
+     * @return Writer[]
+     */
+    protected function getWriters()
+    {
+        return $this->writers;
     }
 }
