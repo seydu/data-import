@@ -20,6 +20,7 @@ matrix:
         - PHPUNIT_FLAGS="--coverage-text --coverage-clover=coverage.clover"
         - COVERAGE=true
 
+
 cache:
   directories:
     - $HOME/.composer/cache
