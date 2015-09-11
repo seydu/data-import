@@ -30,8 +30,8 @@ install:
   - travis_retry composer update --no-progress --no-plugins ${COMPOSER_FLAGS}
 
 script: 
-  - phpunit --coverage-text --coverage-clover=coverage.clover
+  - phpunit ${PHPUNIT_FLAGS}
 
 after_script:
-  - if [[ "$COVERAGE" = true ]]; then wget https://scrutinizer-ci.com/ocular.phar; fi
-  - if [[ "$COVERAGE" = true ]]; then php ocular.phar code-coverage:upload --format=php-clover coverage.clover; fi
+  - wget https://scrutinizer-ci.com/ocular.phar
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.clover
